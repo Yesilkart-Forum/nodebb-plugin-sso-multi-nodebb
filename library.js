@@ -371,6 +371,15 @@ plugin.createUser = function(userData, callback) {
 	});
 };
 
+plugin.parseAuthorizationHeader = function(req) {
+    if (req.headers && req.headers.authorization) {
+        var parts = req.headers.authorization.split(' ');
+        if (parts.length === 2 && parts[0] === 'Bearer') {
+            return parts[1];
+        }
+    }
+};
+
 plugin.addMiddleware = function(req, res, next) {
 	function handleGuest (req, res, next) {
 		if (plugin.settings.guestRedirect && !req.originalUrl.startsWith(nconf.get('relative_path') + '/login?local=1')) {
@@ -383,7 +392,7 @@ plugin.addMiddleware = function(req, res, next) {
 		}
 	}
 
-	// Only respond to page loads by guests, not api or asset calls
+	// Only respond to page loads by guests and api, not asset calls
 	var hasSession = req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && parseInt(req.user.uid, 10) > 0;
 	var hasLoginLock = req.session.hasOwnProperty('loginLock');
 
@@ -408,8 +417,9 @@ plugin.addMiddleware = function(req, res, next) {
 				plugin.cleanup({ res: res });
 				return handleGuest.call(null, req, res, next);
 			} else {
-				if (Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) {
-					return plugin.process(req.cookies[plugin.settings.cookieName], function(err, uid) {
+                if ((Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) || plugin.parseAuthorizationHeader(req).length) {
+                    var token = plugin.parseAuthorizationHeader(req) ? plugin.parseAuthorizationHeader(req) : req.cookies[plugin.settings.cookieName];
+                    return plugin.process(token, function(err, uid) {
 						if (err) {
 							switch(err.message) {
 								case 'banned':
