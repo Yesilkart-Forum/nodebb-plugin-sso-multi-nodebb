@@ -113,3 +113,13 @@ might accidentally lock yourself out of the administrative account as you won't 
 authenticate with. To reset the plugin settings, delete the "settings:session-sharing" hash/document in
 your data store. In a pinch, running `./nodebb reset -p nodebb-plugin-session-sharing` will work to disable
 the plugin so you can log back in.
+
+## API Specifics
+The API version is a fork of the original [plugin](https://github.com/julianlam/nodebb-plugin-session-sharing)
+at https://github.com/julianlam/nodebb-plugin-session-sharing. It was forked as of version 4.2.5 of the original. The
+plan going forward is to keep up to date with the original plugin with the additional functionality.
+
+This fork provides the ability to use the session-sharing plugin with the REST api provided by NodeBB. It can use the
+cookie mechanism that the original plugin uses as well as a Authorization Bearer header with JWT.
+
+``` Authorization: Bearer <jwt-token> ```

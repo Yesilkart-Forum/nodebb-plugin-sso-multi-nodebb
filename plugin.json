@@ -1,6 +1,6 @@
 {
-	"id": "nodebb-plugin-session-sharing",
-	"url": "https://github.com/NodeBB/nodebb-plugin-session-sharing",
+	"id": "nodebb-plugin-session-sharing-api",
+	"url": "https://github.com/brushm/nodebb-plugin-session-sharing-api",
 	"library": "./library.js",
 	"hooks": [
 		{ "hook": "filter:router.page", "method": "addMiddleware" },
