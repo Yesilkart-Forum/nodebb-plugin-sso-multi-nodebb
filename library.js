@@ -417,7 +417,7 @@ plugin.addMiddleware = function(req, res, next) {
 				plugin.cleanup({ res: res });
 				return handleGuest.call(null, req, res, next);
 			} else {
-                if ((Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) || plugin.parseAuthorizationHeader(req).length) {
+                if ((Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) || plugin.parseAuthorizationHeader(req)) {
                     var token = plugin.parseAuthorizationHeader(req) ? plugin.parseAuthorizationHeader(req) : req.cookies[plugin.settings.cookieName];
                     return plugin.process(token, function(err, uid) {
 						if (err) {
