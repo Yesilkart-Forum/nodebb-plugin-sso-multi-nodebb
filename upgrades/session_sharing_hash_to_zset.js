@@ -1,6 +1,6 @@
 'use strict';
 
-var db = require.main.require('./src/database');
+var db = require.main.require('../database');
 
 var async = module.parent.require('async');
 var winston = module.parent.require('winston');
