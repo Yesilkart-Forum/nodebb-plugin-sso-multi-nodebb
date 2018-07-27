@@ -1,13 +1,32 @@
 {
-	"id": "nodebb-plugin-session-sharing-api",
-	"url": "https://github.com/brushm/nodebb-plugin-session-sharing-api",
+	"id": "nodebb-plugin-sso-multi-nodebb",
+	"url": "https://github.com/Magictea-Intl/nodebb-plugin-sso-multi-nodebb",
 	"library": "./library.js",
 	"hooks": [
-		{ "hook": "filter:router.page", "method": "addMiddleware" },
-		{ "hook": "static:app.load", "method": "init" },
-		{ "hook": "filter:admin.header.build", "method": "addAdminNavigation" },
-		{ "hook": "static:user.loggedOut", "method": "cleanup" },
-		{ "hook": "filter:config.get", "method": "appendConfig" }
+		{
+			"hook": "filter:router.page",
+			"method": "addMiddleware"
+		},
+		{
+			"hook": "static:app.load",
+			"method": "init"
+		},
+		{
+			"hook": "filter:admin.header.build",
+			"method": "addAdminNavigation"
+		},
+		{
+			"hook": "static:user.loggedOut",
+			"method": "cleanup"
+		},
+		{
+			"hook": "filter:config.get",
+			"method": "appendConfig"
+		},
+		{
+			"hook": "action:user.loggedIn",
+			"method": "setSsoJwt"
+		}
 	],
 	"less": [
 		"static/style.less"

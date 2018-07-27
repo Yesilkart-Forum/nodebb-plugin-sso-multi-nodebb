@@ -1,11 +1,11 @@
 {
-  "name": "nodebb-plugin-session-sharing-api",
+  "name": "nodebb-plugin-sso-multi-nodebb",
   "version": "4.2.5",
-  "description": "Allows login sessions from your app to persist in NodeBB",
+  "description": "Allows login sessions from your NodeBB to persist in another NodeBB",
   "main": "library.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/brushm/nodebb-plugin-session-sharing-api"
+    "url": "https://github.com/Magictea-Intl/nodebb-plugin-sso-multi-nodebb"
   },
   "keywords": [
     "nodebb",
@@ -19,15 +19,19 @@
     {
       "name": "Michael Brush",
       "email": "mbrush@bcknds.com"
+    },
+    {
+      "name": "Magic SA",
+      "email": "magic@cirno.ooo"
     }
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/brushm/nodebb-plugin-session-sharing-api/issues"
+    "url": "https://github.com/Magictea-Intl/nodebb-plugin-sso-multi-nodebb/issues"
   },
   "readmeFilename": "README.md",
   "nbbpm": {
-    "compatibility": "^1.6.2 || ^1.7.0"
+    "compatibility": "^1.6.2 || ^1.7.0 || ^1.10.1"
   },
   "dependencies": {
     "async": "2.1.4",
