@@ -410,6 +410,7 @@ plugin.addMiddleware = function (req, res, next) {
 		});
 		*/
 		//console.dir(res);
+		var uid = parseInt(req.user.uid, 10);
 		if (!((Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) || plugin.parseAuthorizationHeader(req))) {
 			user.getUserFields(uid, ['username', 'email', 'location', 'birthday', 'website', 'aboutme', 'signature', 'picture'], function (err, usr) {
 				if (err) {
