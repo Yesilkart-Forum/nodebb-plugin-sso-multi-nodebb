@@ -1,6 +1,6 @@
 {
   "name": "nodebb-plugin-sso-multi-nodebb",
-  "version": "4.2.5",
+  "version": "5.0.0",
   "description": "Allows login sessions from your NodeBB to persist in another NodeBB",
   "main": "library.js",
   "repository": {
