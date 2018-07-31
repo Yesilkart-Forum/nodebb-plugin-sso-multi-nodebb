@@ -417,9 +417,12 @@ plugin.addMiddleware = function (req, res, next) {
 				} else {
 					var payload = {};
 					payload[plugin.settings['payload:id']] = usr.uid;
-					delete usr.uid;
+					//delete usr.uid;
 					for (const key in usr) {
 						if (usr.hasOwnProperty(key)) {
+							if (key==='uid'){
+								payload[plugin.settings['payload:id']] = usr['uid'];
+							}else
 							payload[plugin.settings['payload:'+key]] = usr[key];
 						}
 					}
