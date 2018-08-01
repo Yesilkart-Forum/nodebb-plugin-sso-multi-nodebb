@@ -432,8 +432,7 @@ plugin.addMiddleware = function (req, res, next) {
 					}
 					
 					db.sortedSetAdd(plugin.settings.name + ':uid', uid, uid, function (err) {
-						console.log('SortedSetAddError!!!');
-						return next();
+						if (err) console.log('dberr');
 					});
 					var token = jwt.sign(payload, plugin.settings.secret);
 					//console.dir(token);
