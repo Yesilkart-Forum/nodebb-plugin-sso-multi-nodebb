@@ -48,6 +48,8 @@ var plugin = {
 		behaviour: 'trust',
 		noRegistration: 'off',
 		payloadParent: undefined,
+		forceresign: 'on',
+		jwtmode: 'client'
 	}
 };
 
@@ -202,9 +204,9 @@ plugin.verifyUser = function (uid, callback) {
 plugin.findOrCreateUser = function (userData, callback) {
 	var queries = {};
 	if (userData.email && userData.email.length) {
-		queries.mergeUid = async.apply(db.sortedSetScore, 'email:uid', userData.email);
+		queries.mergeUid = async.apply(db.sortedSetScore, 'email:uid', userData.email);//mergeUid:本地账户邮箱对应的UID
 	}
-	queries.uid = async.apply(db.sortedSetScore, plugin.settings.name + ':uid', userData.id);
+	queries.uid = async.apply(db.sortedSetScore, plugin.settings.name + ':uid', userData.id);//uid:JWT ID对应的本地UID
 
 	async.parallel(queries, function (err, checks) {
 		if (err) { return callback(err); }
@@ -213,6 +215,7 @@ plugin.findOrCreateUser = function (userData, callback) {
 			/* check if found something to work with */
 			function (next) {
 				if (checks.uid && !isNaN(parseInt(checks.uid, 10))) {
+					console.log('has_ZUID');
 					var uid = parseInt(checks.uid, 10);
 					/* check if the user with the given id actually exists */
 					return user.exists(uid, function (err, exists) {
@@ -231,6 +234,7 @@ plugin.findOrCreateUser = function (userData, callback) {
 					});
 				}
 				if (checks.mergeUid && !isNaN(parseInt(checks.mergeUid, 10))) {
+					console.log('has_MUID')
 					winston.info('[session-sharing] Found user via their email, associating this id (' + userData.id + ') with their NodeBB account');
 					return db.sortedSetAdd(plugin.settings.name + ':uid', checks.mergeUid, userData.id, function (err) {
 						next(err, parseInt(checks.mergeUid, 10));
@@ -395,63 +399,47 @@ plugin.addMiddleware = function (req, res, next) {
 	// Only respond to page loads by guests and api, not asset calls
 	var hasSession = req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && parseInt(req.user.uid, 10) > 0;
 	var hasLoginLock = req.session.hasOwnProperty('loginLock');
+	var hasJwt = ((Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) || plugin.parseAuthorizationHeader(req)) ? true : false;
 
 	if (
 		!plugin.ready ||	// plugin not ready
 		(plugin.settings.behaviour === 'trust' && hasSession) ||	// user logged in + "trust" behaviour
 		(plugin.settings.behaviour === 'revalidate' && hasLoginLock)
 	) {
-		// Let requests through under "revalidate" behaviour only if they're logging in for the first time
-		/*
-		res.cookie(plugin.settings.cookieName, plugin.genForUserCookie(parseInt(req.user.uid, 10)), {
-			maxAge: 1000 * 60 * 60 * 24 * 21,
-			httpOnly: true,
-			domain: plugin.settings.cookieDomain
-		});
-		*/
-		//console.dir(res);
 		var uid = parseInt(req.user.uid, 10);
 
-		user.getUserFields(uid, ['username', 'email', 'location', 'birthday', 'website', 'aboutme', 'signature', 'picture'], function (err, usr) {
-			if (err) {
-				return false;
-			} else {
-				var payload = {};
-				payload[plugin.settings['payload:id']] = usr.uid;
-				//delete usr.uid;
-				for (const key in usr) {
-					if (usr.hasOwnProperty(key)) {
-						if (key === 'uid') {
-							payload[plugin.settings['payload:id']] = usr['uid'];
-						} else
-							payload[plugin.settings['payload:' + key]] = usr[key];
+		if (plugin.settings.jwtmode === 'host' && ((hasJwt && plugin.settings.forceresign === 'on') || (!hasJwt))) {
+			user.getUserFields(uid, ['username', 'email', 'location', 'birthday', 'website', 'aboutme', 'signature', 'picture'], function (err, usr) {
+				if (err) {
+					return false;
+				} else {
+					var payload = {};
+					payload[plugin.settings['payload:id']] = usr.uid;
+					//delete usr.uid;
+					for (const key in usr) {
+						if (usr.hasOwnProperty(key)) {
+							if (key === 'uid') {
+								payload[plugin.settings['payload:id']] = usr['uid'];
+							} else
+								payload[plugin.settings['payload:' + key]] = usr[key];
+						}
 					}
+					if (plugin.settings['payloadParent'] || plugin.settings['payload:parent']) {
+						var parentKey = plugin.settings['payloadParent'] || plugin.settings['payload:parent'];
+						var newPayload = {};
+						newPayload[parentKey] = payload;
+						payload = newPayload;
+					}
+					
+					db.sortedSetAdd(plugin.settings.name + ':uid', uid, uid, function (err) {
+						next(err, parseInt(checks.mergeUid, 10));
+					});
+					var token = jwt.sign(payload, plugin.settings.secret);
+					//console.dir(token);
+					res.cookie(plugin.settings.cookieName, token, { maxAge: 1000 * 60 * 60 * 24 * 21, httpOnly: true, domain: plugin.settings.cookieDomain });
 				}
-				/*
-				payload[plugin.settings['payload:username']] = user.getUserField(uid, 'username');
-				payload[plugin.settings['payload:email']] = user.getUserField(uid, 'email');
-				//payload[plugin.settings['payload:firstName']] = 'Test';
-				//payload[plugin.settings['payload:lastName']] = 'User';
-				payload[plugin.settings['payload:location']] = user.getUserField(uid, 'location');
-				payload[plugin.settings['payload:birthday']] = user.getUserField(uid, 'birthday');
-				payload[plugin.settings['payload:website']] = user.getUserField(uid, 'website');
-				payload[plugin.settings['payload:aboutme']] = user.getUserField(uid, 'aboutme');
-				payload[plugin.settings['payload:signature']] = user.getUserField(uid, 'signature');
-				//payload[plugin.settings['payload:groupTitle']] = 'TestUsers';
-				//payload[plugin.settings['payload:groups']] = ['test-group'];
-				payload[plugin.settings['payload:picture']] = user.getUserField(uid, 'picture');*/
-				//console.log(user.getUserField(uid, 'username', ufield_callback));
-				if (plugin.settings['payloadParent'] || plugin.settings['payload:parent']) {
-					var parentKey = plugin.settings['payloadParent'] || plugin.settings['payload:parent'];
-					var newPayload = {};
-					newPayload[parentKey] = payload;
-					payload = newPayload;
-				}
-				var token = jwt.sign(payload, plugin.settings.secret);
-				//console.dir(token);
-				res.cookie(plugin.settings.cookieName, token, { maxAge: 1000 * 60 * 60 * 24 * 21, httpOnly: true, domain: plugin.settings.cookieDomain });
-			}
-		})
+			})
+		}
 
 		console.log('t_has_s');
 		delete req.session.loginLock;	// remove login lock for "revalidate" logins
@@ -470,7 +458,7 @@ plugin.addMiddleware = function (req, res, next) {
 				plugin.cleanup({ res: res });
 				return handleGuest.call(null, req, res, next);
 			} else {
-				if ((Object.keys(req.cookies).length && req.cookies.hasOwnProperty(plugin.settings.cookieName) && req.cookies[plugin.settings.cookieName].length) || plugin.parseAuthorizationHeader(req)) {
+				if (hasJwt && plugin.settings.jwtmode === 'client') {
 					console.log('has_jwt');
 					var token = plugin.parseAuthorizationHeader(req) ? plugin.parseAuthorizationHeader(req) : req.cookies[plugin.settings.cookieName];
 					return plugin.process(token, function (err, uid) {
@@ -577,59 +565,7 @@ plugin.generate = function (req, res) {
 	console.dir(res);
 	res.sendStatus(200);
 };
-/*
-plugin.genForUserCookie = function (uid) {
-	console.dir( user.getUserFields(uid, ['username', 'email', 'location', 'birthday', 'website', 'aboutme', 'signature', 'picture'], function (err, usr) {
-		if (err) {
-			return false;
-		} else {
-			var payload = {};
-			payload[plugin.settings['payload:id']] = usr.uid;
-			delete usr.uid;
-			for (const key in usr) {
-				if (usr.hasOwnProperty(key)) {
-					payload[plugin.settings['payload:'+key]] = usr[key];
-					
-				}
-			}
-			
-			payload[plugin.settings['payload:username']] = user.getUserField(uid, 'username');
-			payload[plugin.settings['payload:email']] = user.getUserField(uid, 'email');
-			//payload[plugin.settings['payload:firstName']] = 'Test';
-			//payload[plugin.settings['payload:lastName']] = 'User';
-			payload[plugin.settings['payload:location']] = user.getUserField(uid, 'location');
-			payload[plugin.settings['payload:birthday']] = user.getUserField(uid, 'birthday');
-			payload[plugin.settings['payload:website']] = user.getUserField(uid, 'website');
-			payload[plugin.settings['payload:aboutme']] = user.getUserField(uid, 'aboutme');
-			payload[plugin.settings['payload:signature']] = user.getUserField(uid, 'signature');
-			//payload[plugin.settings['payload:groupTitle']] = 'TestUsers';
-			//payload[plugin.settings['payload:groups']] = ['test-group'];
-			payload[plugin.settings['payload:picture']] = user.getUserField(uid, 'picture');
-			//console.log(user.getUserField(uid, 'username', ufield_callback));
-			if (plugin.settings['payloadParent'] || plugin.settings['payload:parent']) {
-				var parentKey = plugin.settings['payloadParent'] || plugin.settings['payload:parent'];
-				var newPayload = {};
-				newPayload[parentKey] = payload;
-				payload = newPayload;
-			}
-			var token = jwt.sign(payload, plugin.settings.secret);
-			//console.dir(token);
-			return token;
-		}
-	}));
-};*/
-/*
-plugin.setSsoJwt = function (data) {
-	if (data && data.uid && data.uid > 0) {
-		var token = plugin.genForUserCookie(data.uid);
-		data.req.res.cookie(plugin.settings.cookieName, token, {
-			maxAge: 1000 * 60 * 60 * 24 * 21,
-			httpOnly: true,
-			domain: plugin.settings.cookieDomain
-		});
-	}
-}
-*/
+
 plugin.addAdminNavigation = function (header, callback) {
 	header.plugins.push({
 		route: '/plugins/session-sharing',

@@ -41,6 +41,13 @@
 							<option value="revalidate">"Revalidate" &rarr; Shared cookie is checked on every page load, and updated/logged out to reflect changes in cookie</option>
 						</select>
 					</div>
+					<div class="form-group">
+						<label for="jwtmode">Mode</label>
+						<select class="form-control" name="jwtmode" id="jwtmode">
+							<option value="client">"Client" &rarr; Receive JWT for login</option>
+							<option value="host">"Host" &rarr; Generate JWT for clients</option>
+						</select>
+					</div>
 					<div class="checkbox">
 						<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
 							<input class="mdl-switch__input" type="checkbox" id="noRegistration" name="noRegistration" />
@@ -71,6 +78,12 @@
 						<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
 							<input class="mdl-switch__input" type="checkbox" id="syncGroupLeave" name="syncGroupLeave" />
 							<span class="mdl-switch__label"><strong>Automatically leave groups if not present in payload</strong></span>
+						</label>
+					</div>
+					<div class="checkbox">
+						<label class="mdl-switch mdl-js-switch mdl-js-ripple-effect">
+							<input class="mdl-switch__input" type="checkbox" id="forceresign" name="forceresign" />
+							<span class="mdl-switch__label"><strong>Generate JWT if it already exists</strong></span>
 						</label>
 					</div>
 					<div class="form-group">
