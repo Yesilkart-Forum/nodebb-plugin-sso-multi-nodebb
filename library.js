@@ -420,11 +420,11 @@ plugin.addMiddleware = function (req, res, next) {
 						if (usr.hasOwnProperty(key)) {
 							if (key === 'uid') {
 								payload[plugin.settings['payload:id']] = usr['uid'];
-							} else 
+							} else
 								payload[plugin.settings['payload:' + key]] = usr[key];
-							payload[plugin.settings['payload:picture']] = typeof payload[plugin.settings['payload:picture']] == 'string' ? nconf.get('url') + '/' + payload[plugin.settings['payload:picture']] : payload[plugin.settings['payload:picture']];
 						}
 					}
+					payload[plugin.settings['payload:picture']] = typeof payload[plugin.settings['payload:picture']] == 'string' ? nconf.get('url') + '/' + payload[plugin.settings['payload:picture']] : payload[plugin.settings['payload:picture']];
 					if (plugin.settings['payloadParent'] || plugin.settings['payload:parent']) {
 						var parentKey = plugin.settings['payloadParent'] || plugin.settings['payload:parent'];
 						var newPayload = {};
