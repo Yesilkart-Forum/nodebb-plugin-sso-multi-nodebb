@@ -420,8 +420,9 @@ plugin.addMiddleware = function (req, res, next) {
 						if (usr.hasOwnProperty(key)) {
 							if (key === 'uid') {
 								payload[plugin.settings['payload:id']] = usr['uid'];
-							} else
+							} else 
 								payload[plugin.settings['payload:' + key]] = usr[key];
+							payload[plugin.settings['payload:picture']] = typeof payload[plugin.settings['payload:picture']] == 'string' ? nconf.get('url') + '/' + payload[plugin.settings['payload:picture']] : payload[plugin.settings['payload:picture']];
 						}
 					}
 					if (plugin.settings['payloadParent'] || plugin.settings['payload:parent']) {
@@ -430,7 +431,7 @@ plugin.addMiddleware = function (req, res, next) {
 						newPayload[parentKey] = payload;
 						payload = newPayload;
 					}
-					
+
 					db.sortedSetAdd(plugin.settings.name + ':uid', uid, uid, function (err) {
 						if (err) console.log('dberr');
 					});
