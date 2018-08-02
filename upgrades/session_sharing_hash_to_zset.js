@@ -1,6 +1,7 @@
 'use strict';
-
-var db = require.main.require('../database');
+var os=require('os');
+var platform=os.platform();
+var db = require.main.require(platform=='win32'?'../database':'./src/database');
 
 var async = module.parent.require('async');
 var winston = module.parent.require('winston');
