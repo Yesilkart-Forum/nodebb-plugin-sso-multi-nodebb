@@ -424,7 +424,7 @@ plugin.addMiddleware = function (req, res, next) {
 								payload[plugin.settings['payload:' + key]] = usr[key];
 						}
 					}
-					payload[plugin.settings['payload:picture']] = typeof payload[plugin.settings['payload:picture']] == 'string' ? nconf.get('url') + '/' + payload[plugin.settings['payload:picture']] : payload[plugin.settings['payload:picture']];
+					payload[plugin.settings['payload:picture']] = ((typeof payload[plugin.settings['payload:picture']] == 'string') && payload[plugin.settings['payload:picture']].length > 1) ? nconf.get('url') + '/' + payload[plugin.settings['payload:picture']] : payload[plugin.settings['payload:picture']];
 					if (plugin.settings['payloadParent'] || plugin.settings['payload:parent']) {
 						var parentKey = plugin.settings['payloadParent'] || plugin.settings['payload:parent'];
 						var newPayload = {};
