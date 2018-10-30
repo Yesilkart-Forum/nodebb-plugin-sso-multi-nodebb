@@ -28,7 +28,8 @@ var profileFields = [
 	'groupTitle',
 	'birthday',
 	'signature',
-	'aboutme'
+	'aboutme',
+	'email:confirmed'
 ];
 var payloadKeys = profileFields.concat([
 	'id', // the uniq identifier of that account
@@ -295,13 +296,19 @@ plugin.updateUserProfile = function (uid, userData, isNewUser, callback) {
 			setImmediate(next, null, {});
 		},
 		function (userObj, next) {
+			var err = null;
 			if (userData.picture) {
-				return db.setObjectField('user:' + uid, 'picture', userData.picture, next);
+				db.setObjectField('user:' + uid, 'picture', userData.picture, data => { err = data });
+			}
+			if (userData['email:confirmed']) {
+				db.setObjectField('user:' + uid, 'email:confirmed', userData['email:confirmed'], data => { err = data });
+				winston.warn('user2.5: ' + JSON.stringify(userData))
 			}
 
-			setImmediate(next, null);
+			setImmediate(next, err);
 		}
 	], function (err) {
+		winston.warn('callback for update')
 		return callback(err, uid, userData, isNewUser);
 	});
 };
@@ -409,10 +416,11 @@ plugin.addMiddleware = function (req, res, next) {
 		var uid = parseInt(req.user.uid, 10);
 
 		if (plugin.settings.jwtmode === 'host' && ((hasJwt && plugin.settings.forceresign === 'on') || (!hasJwt))) {
-			user.getUserFields(uid, ['username', 'email', 'location', 'birthday', 'website', 'aboutme', 'signature', 'picture'], function (err, usr) {
+			user.getUserFields(uid, ['username', 'email', 'location', 'birthday', 'website', 'aboutme', 'signature', 'picture', 'email:confirmed'], function (err, usr) {
 				if (err) {
 					return false;
 				} else {
+					plugin.settings['payload:email:confirmed'] = 'email:confirmed';
 					var payload = {};
 					payload[plugin.settings['payload:id']] = usr.uid;
 					//delete usr.uid;
@@ -442,7 +450,7 @@ plugin.addMiddleware = function (req, res, next) {
 			})
 		}
 
-		console.log('t_has_s');
+		//console.log('t_has_s');
 		delete req.session.loginLock;	// remove login lock for "revalidate" logins
 
 		return next();
@@ -460,7 +468,7 @@ plugin.addMiddleware = function (req, res, next) {
 				return handleGuest.call(null, req, res, next);
 			} else {
 				if (hasJwt && plugin.settings.jwtmode === 'client') {
-					console.log('has_jwt');
+					//console.log('has_jwt');
 					var token = plugin.parseAuthorizationHeader(req) ? plugin.parseAuthorizationHeader(req) : req.cookies[plugin.settings.cookieName];
 					return plugin.process(token, function (err, uid) {
 						if (err) {
