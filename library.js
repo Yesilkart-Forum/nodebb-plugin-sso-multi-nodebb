@@ -232,9 +232,10 @@ plugin.normalizePayload = function (payload, callback) {
 
 plugin.verifyUser = function (uid, callback) {
   // Check ban state of user, reject if banned
-  user.isBanned(uid, function (err, banned) {
-    callback(err || banned ? new Error('banned') : null, uid)
-  })
+  var isBanned = async function () {
+    return await user.bans.isBanned(uid)
+  }
+  isBanned.then(banned => callback(banned ? new Error('banned') : null, uid), () => callback(new Error('banned'), uid))
 }
 
 plugin.findOrCreateUser = function (userData, callback) {
@@ -291,8 +292,8 @@ plugin.findOrCreateUser = function (userData, callback) {
             console.log('has_MUID')
             winston.info(
               '[session-sharing] Found user via their email, associating this id (' +
-                userData.id +
-                ') with their NodeBB account'
+              userData.id +
+              ') with their NodeBB account'
             )
             return db.sortedSetAdd(
               plugin.settings.name + ':uid',
@@ -359,10 +360,10 @@ plugin.updateUserProfile = function (uid, userData, isNewUser, callback) {
             if (err) {
               winston.warn(
                 '[session-sharing] Unable to update profile information for uid: ' +
-                  uid +
-                  '(' +
-                  err.message +
-                  ')'
+                uid +
+                '(' +
+                err.message +
+                ')'
               )
             }
 
@@ -443,7 +444,7 @@ plugin.updateUserGroups = function (uid, userData, isNewUser, callback) {
   )
 }
 
-function executeJoinLeave (uid, join, leave, callback) {
+function executeJoinLeave(uid, join, leave, callback) {
   async.parallel(
     [
       function (next) {
@@ -505,7 +506,7 @@ plugin.parseAuthorizationHeader = function (req) {
 }
 
 plugin.addMiddleware = function (req, res, next) {
-  function handleGuest (req, res, next) {
+  function handleGuest(req, res, next) {
     if (
       plugin.settings.guestRedirect &&
       !req.originalUrl.startsWith(nconf.get('relative_path') + '/login?local=1')
@@ -578,10 +579,10 @@ plugin.addMiddleware = function (req, res, next) {
             }
             payload[plugin.settings['payload:picture']] =
               typeof payload[plugin.settings['payload:picture']] === 'string' &&
-              payload[plugin.settings['payload:picture']].length > 1
+                payload[plugin.settings['payload:picture']].length > 1
                 ? nconf.get('url') +
-                  '/' +
-                  payload[plugin.settings['payload:picture']]
+                '/' +
+                payload[plugin.settings['payload:picture']]
                 : payload[plugin.settings['payload:picture']]
             if (
               plugin.settings['payloadParent'] ||
@@ -641,8 +642,8 @@ plugin.addMiddleware = function (req, res, next) {
                 case 'banned':
                   winston.info(
                     '[session-sharing] uid ' +
-                      uid +
-                      ' is banned, not logging them in'
+                    uid +
+                    ' is banned, not logging them in'
                   )
                   next()
                   break
@@ -661,7 +662,7 @@ plugin.addMiddleware = function (req, res, next) {
                 default:
                   winston.warn(
                     '[session-sharing] Error encountered while parsing token: ' +
-                      err.message
+                    err.message
                   )
                   next()
                   break
@@ -672,9 +673,9 @@ plugin.addMiddleware = function (req, res, next) {
 
             winston.verbose(
               '[session-sharing] Processing login for uid ' +
-                uid +
-                ', path ' +
-                req.originalUrl
+              uid +
+              ', path ' +
+              req.originalUrl
             )
             req.uid = uid
             console.log('login_jwt')
